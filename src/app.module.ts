@@ -30,9 +30,9 @@ import { ConfigModule } from '@nestjs/config';
       entities: [__dirname + '/**/*.entity.{js,ts}'],
       synchronize: false,
       logging: true,
-      ssl: { 
-        rejectUnauthorized: false 
-      }
+      ssl: process.env.NODE_ENV === 'production' ? {
+        rejectUnauthorized: false
+      } : false,
     }),
     AuthModule,
     UserModule,
