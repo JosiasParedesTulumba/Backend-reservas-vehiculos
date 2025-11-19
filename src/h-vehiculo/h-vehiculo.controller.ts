@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req } from '@nestjs/common';
 import { HVehiculoService } from './h-vehiculo.service';
 import { CreateHVehiculoDto } from './dto/create-h-vehiculo.dto';
 import { UpdateHVehiculoDto } from './dto/update-h-vehiculo.dto';
@@ -9,15 +9,15 @@ import { EmpleadoGuard, SupervisorGuard } from '../auth/guards/auth.guard';
 @UseGuards(SupervisorGuard) // Proteger todas las rutas por defecto
 @UseGuards(EmpleadoGuard) // Permite también a empleados
 export class HVehiculoController {
-  constructor(private readonly hVehiculoService: HVehiculoService) {}
+  constructor(private readonly hVehiculoService: HVehiculoService) { }
 
   @Post()
-  async create(@Body() createHVehiculoDto: CreateHVehiculoDto): Promise<HVehiculo> {
-    // Validación manual básica
-    if (!createHVehiculoDto.vehiculo_id || !createHVehiculoDto.usuario_id || !createHVehiculoDto.tipo_evento) {
-      throw new Error('Faltan campos requeridos');
-    }
-    return await this.hVehiculoService.create(createHVehiculoDto);
+  async create(
+    @Body() createHVehiculoDto: CreateHVehiculoDto,
+    @Req() req,
+  ): Promise<HVehiculo> 
+    {
+    return await this.hVehiculoService.create(createHVehiculoDto, req.user.usuario_id);
   }
 
   @Get()
@@ -35,10 +35,7 @@ export class HVehiculoController {
   }
 
   @Patch(':id')
-  async update(
-    @Param('id') id: string,
-    @Body() updateHVehiculoDto: UpdateHVehiculoDto,
-  ): Promise<HVehiculo> {
+  async update( @Param('id') id: string, @Body() updateHVehiculoDto: UpdateHVehiculoDto ): Promise<HVehiculo> {
     const idNum = parseInt(id, 10);
     if (isNaN(idNum)) {
       throw new Error('ID debe ser un número');

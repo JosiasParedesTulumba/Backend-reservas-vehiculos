@@ -1,5 +1,7 @@
 import { HVehiculo } from "src/h-vehiculo/entities/h-vehiculo.entity";
+import { Pago } from "src/pago/entities/pago.entity";
 import { Persona } from "src/persona/entities/persona.entity";
+import { Reserva } from "src/reserva/entities/reserva.entity";
 import { Rol } from "src/rol/entities/rol.entity";
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 
@@ -16,7 +18,7 @@ export class User {
     persona_id: number;
 
     @Column({ length: 100 })
-    nombre_usuario: string;
+    nombre_usuario: string; 
 
     @Column({ length: 100 })
     contrasena: string;
@@ -35,4 +37,10 @@ export class User {
     // Relación con VehiculoHistory (historial de cambios en vehículos realizados por el usuario)
     @OneToMany(() => HVehiculo, historial => historial.usuario)
     historialesVehiculo: HVehiculo[];
+
+    @OneToMany(() => Reserva, reserva => reserva.usuario)
+    reserva: Reserva[];
+
+    @OneToMany(() => Pago, pago => pago.usuario)
+    pago: Pago[];
 }

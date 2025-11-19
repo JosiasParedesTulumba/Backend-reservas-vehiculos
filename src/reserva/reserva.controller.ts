@@ -1,34 +1,47 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, Req, ParseIntPipe, Put, UseGuards } from '@nestjs/common';
 import { ReservaService } from './reserva.service';
 import { CreateReservaDto } from './dto/create-reserva.dto';
 import { UpdateReservaDto } from './dto/update-reserva.dto';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('reserva')
 export class ReservaController {
-  constructor(private readonly reservaService: ReservaService) {}
 
+  constructor(private readonly reservaService: ReservaService) { }
+  
   @Post()
-  create(@Body() createReservaDto: CreateReservaDto) {
-    return this.reservaService.create(createReservaDto);
+  @UseGuards(AuthGuard('jwt'))
+  async create(@Body() createReservaDto: CreateReservaDto, @Req() req: any) {
+    return this.reservaService.create(createReservaDto, req.user.usuario_id);
   }
 
   @Get()
-  findAll() {
+  async findAll() {
     return this.reservaService.findAll();
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.reservaService.findOne(+id);
+  @Get('vehiculo/:vehiculoId')
+  async findByVehiculo(@Param('vehiculoId', ParseIntPipe) vehiculoId: number) {
+    return this.reservaService.findByVehiculo(vehiculoId);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateReservaDto: UpdateReservaDto) {
-    return this.reservaService.update(+id, updateReservaDto);
+  @Get(':id')
+  async findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.reservaService.findOne(id);
+  }
+
+  @Put(':id')
+  async update(@Param('id', ParseIntPipe) id: number, @Body() updateReservaDto: UpdateReservaDto) {
+    return this.reservaService.update(id, updateReservaDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.reservaService.remove(+id);
+  async remove(@Param('id', ParseIntPipe) id: number) {
+    return this.reservaService.remove(id);
+  }
+
+  @Post(':id/cancelar')
+  async cancel(@Param('id', ParseIntPipe) id: number) {
+    return this.reservaService.cancel(id);
   }
 }

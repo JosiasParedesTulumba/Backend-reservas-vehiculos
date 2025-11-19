@@ -1,5 +1,6 @@
+import { Reserva } from "src/reserva/entities/reserva.entity";
 import { User } from "src/user/entities/user.entity";
-import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity('persona')
 export class Persona {
@@ -39,4 +40,8 @@ export class Persona {
 
     @OneToOne(() => User, user => user.persona)
     usuario: User;
+
+    @OneToMany(() => Reserva, reserva => reserva.persona)
+    reserva: Reserva[];
+
 }

@@ -18,6 +18,13 @@ export class VehiculoController {
     return this.vehiculoService.findAll();
   }
 
+  // Obtener matrículas de vehículos y mostrar en un select
+  @Get('matriculas/lista')
+  @UseGuards(EmpleadoGuard)
+  getMatriculas() {
+    return this.vehiculoService.getMatriculas();
+  }
+
   // Ver vehículo específico
   @Get(':id')
   @UseGuards(SupervisorGuard)

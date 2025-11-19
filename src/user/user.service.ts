@@ -16,7 +16,7 @@ export class UserService {
   async findByUsername(nombre_usuario: string) {
     return await this.userRepository.findOne({
       where: { nombre_usuario, estado_usuario: 1 },
-      relations: ['rol', 'persona'], // Traer datos relacionados
+      relations: ['rol', 'persona'], 
     });
   }
 
@@ -55,7 +55,7 @@ export class UserService {
     return await this.userRepository.find({
       relations: ['rol', 'persona'],
       where: { estado_usuario: 1 }, // Solo usuarios activos
-      order: { usuario_id: 'DESC' }
+      order: { usuario_id: 'ASC' }
     });
   }
 

@@ -1,8 +1,10 @@
 import { HVehiculo } from "src/h-vehiculo/entities/h-vehiculo.entity";
+import { Reserva } from "src/reserva/entities/reserva.entity";
 import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 
 @Entity('vehiculo')
 export class Vehiculo {
+
     @PrimaryGeneratedColumn()
     vehiculo_id: number;
 
@@ -42,4 +44,7 @@ export class Vehiculo {
     // Relación con VehiculoHistory
     @OneToMany(() => HVehiculo, historial => historial.vehiculo)
     historiales: HVehiculo[];
+
+    @OneToMany(() => Reserva, reserva => reserva.vehiculo)
+    reserva: Reserva[];
 }

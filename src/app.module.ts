@@ -15,6 +15,8 @@ import { Rol } from './rol/entities/rol.entity';
 import { Vehiculo } from './vehiculo/entities/vehiculo.entity';
 import { HVehiculoModule } from './h-vehiculo/h-vehiculo.module';
 import { HVehiculo } from './h-vehiculo/entities/h-vehiculo.entity';
+import { Reserva } from './reserva/entities/reserva.entity';
+import { Pago } from './pago/entities/pago.entity';
 
 @Module({
   imports: [
@@ -25,9 +27,9 @@ import { HVehiculo } from './h-vehiculo/entities/h-vehiculo.entity';
       username: 'root',
       password: 'admin',
       database: 'bd_gestion_reservas_v',
-      entities: [User, Persona, Rol, Vehiculo, HVehiculo],
+      entities: [User, Persona, Rol, Vehiculo, HVehiculo, Reserva, Pago],
       synchronize: false,
-      logging: true,
+      logging: false,
     }),
     AuthModule,
     UserModule,

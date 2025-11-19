@@ -12,7 +12,7 @@ export class RolService {
       private rolesRepository: Repository<Rol>
     ) {}
 
-    async create(createRolDto: CreateRolDto) {
+    async create(createRolDto: CreateRolDto): Promise<Rol> {
       const rol = this.rolesRepository.create({
         ...createRolDto,
         estado_rol: createRolDto.estado_rol ?? 1, // Por defecto activo
@@ -20,7 +20,7 @@ export class RolService {
       return await this.rolesRepository.save(rol);
     }
 
-    async findAll() {
+    async findAll(): Promise<Rol[]> {
       return await this.rolesRepository.find({
         where: { estado_rol: 1 }, // Solo roles activos
         order: { nombre_rol: 'ASC' }
@@ -41,7 +41,7 @@ export class RolService {
 
     async update(rol_id: number, updateRolDto: UpdateRolDto) {
       const rol = await this.findOne(rol_id);
-      await this.rolesRepository.update(rol_id, updateRolDto);
+      await this.rolesRepository.update(rol, updateRolDto);
       return this.findOne(rol_id);
     }
   

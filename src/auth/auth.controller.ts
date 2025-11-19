@@ -33,7 +33,7 @@ export class AuthController {
   @UseGuards(AdminGuard)
   testAdmin(@Request() req) {
     return {
-      mensaje: '✅ Solo ADMINS pueden ver esto',
+      mensaje: 'Solo ADMINS pueden ver esto',
       usuario: req.user,
       rol_permitido: 'ADMIN'
     };
@@ -43,7 +43,7 @@ export class AuthController {
   @UseGuards(EmpleadoGuard)
   testEmpleado(@Request() req) {
     return {
-      mensaje: '✅ ADMIN y EMPLEADOS pueden ver esto',
+      mensaje: 'ADMIN y EMPLEADOS pueden ver esto',
       usuario: req.user,
       roles_permitidos: ['ADMIN', 'EMPLEADO']
     };
@@ -53,7 +53,7 @@ export class AuthController {
   @UseGuards(SupervisorGuard)
   testSupervisor(@Request() req) {
     return {
-      mensaje: '✅ Todos los roles pueden ver esto',
+      mensaje: 'Todos los roles pueden ver esto',
       usuario: req.user,
       roles_permitidos: ['ADMIN', 'EMPLEADO', 'SUPERVISOR']
     };

@@ -7,6 +7,7 @@ import { Repository } from 'typeorm';
 
 @Injectable()
 export class VehiculoService {
+    
     constructor(
         @InjectRepository(Vehiculo)
         private vehiculoRepository: Repository<Vehiculo>
@@ -16,7 +17,7 @@ export class VehiculoService {
     async create(createVehiculoDto: CreateVehiculoDto) {
         // Verificar si la matricula no exista
         const existeMatricula = await this.vehiculoRepository.findOne({
-            where: { matricula: createVehiculoDto.matricula }  
+            where: { matricula: createVehiculoDto.matricula }
         });
 
         if (existeMatricula) {
@@ -35,7 +36,7 @@ export class VehiculoService {
     async findAll() {
         return await this.vehiculoRepository.find({
             where: { estado_actual: 1 }, // Solo vehiculos activos
-            order: { fecha_creacion: 'DESC' }, // Ordenar por fecha de creacion
+            order: { fecha_creacion: 'ASC' }, // Ordenar por fecha de creacion
         });
     }
 
@@ -130,5 +131,14 @@ export class VehiculoService {
             reservados,
             en_mantenimiento: mantenimiento
         };
+    }
+
+    // Para obtener matriculas de vehiculos en un select
+    async getMatriculas() {
+        return await this.vehiculoRepository.find({
+            where: { estado_actual: 1 },
+            select: ['vehiculo_id', 'matricula'],
+            order: { matricula: 'ASC' }
+        });
     }
 }
