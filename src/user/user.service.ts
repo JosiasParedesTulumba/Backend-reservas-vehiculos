@@ -4,19 +4,20 @@ import { Not, Repository } from 'typeorm';
 import { User } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UserService {
-  
+
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
-  ) {}
+  ) { }
 
   async findByUsername(nombre_usuario: string) {
     return await this.userRepository.findOne({
       where: { nombre_usuario, estado_usuario: 1 },
-      relations: ['rol', 'persona'], 
+      relations: ['rol', 'persona'],
     });
   }
 
@@ -38,13 +39,17 @@ export class UserService {
     const existeUsuario = await this.userRepository.findOne({
       where: { nombre_usuario: createUserDto.nombre_usuario }
     });
-    
+
     if (existeUsuario) {
       throw new BadRequestException('El nombre de usuario ya existe');
     }
 
+    const salt = await bcrypt.genSalt();
+    const hashedPassword = await bcrypt.hash(createUserDto.contrasena, salt);
+
     const usuario = this.userRepository.create({
       ...createUserDto,
+      contrasena: hashedPassword,
       estado_usuario: 1, // Por defecto activo
     });
 
@@ -65,15 +70,20 @@ export class UserService {
     // Si se cambia nombre de usuario, verificar que no exista
     if (updateUserDto.nombre_usuario) {
       const existeUsuario = await this.userRepository.findOne({
-        where: { 
+        where: {
           nombre_usuario: updateUserDto.nombre_usuario,
           usuario_id: Not(usuario_id) // Excluir el usuario actual
         }
       });
-      
+
       if (existeUsuario) {
         throw new BadRequestException('El nombre de usuario ya existe');
       }
+    }
+
+    if (updateUserDto.contrasena) {
+      const salt = await bcrypt.genSalt();
+      updateUserDto.contrasena = await bcrypt.hash(updateUserDto.contrasena, salt);
     }
 
     await this.userRepository.update(usuario_id, updateUserDto);

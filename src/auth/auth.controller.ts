@@ -1,7 +1,9 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards, Request } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/auth.dto';
-import { AdminGuard, EmpleadoGuard, SimpleAuthGuard, SupervisorGuard } from './guards/auth.guard';
+import { AuthGuard } from '@nestjs/passport';
+import { Roles } from './decorators/roles.decorator';
+import { RolesGuard } from './guards/roles.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -18,7 +20,7 @@ export class AuthController {
   // ENDPOINTS PROTEGIDOS (requieren token)
 
   @Get('me')
-  @UseGuards(SimpleAuthGuard)
+  @UseGuards(AuthGuard('jwt'))
   async getMe(@Request() req) {
     const profile = await this.authService.getProfile(req.user.usuario_id);
     return {
@@ -30,7 +32,8 @@ export class AuthController {
   // ENDPOINTS DE PRUEBA POR ROLES
 
   @Get('test/admin')
-  @UseGuards(AdminGuard)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('ADMIN')
   testAdmin(@Request() req) {
     return {
       mensaje: 'Solo ADMINS pueden ver esto',
@@ -40,7 +43,8 @@ export class AuthController {
   }
 
   @Get('test/empleado')
-  @UseGuards(EmpleadoGuard)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('ADMIN', 'EMPLEADO')
   testEmpleado(@Request() req) {
     return {
       mensaje: 'ADMIN y EMPLEADOS pueden ver esto',
@@ -50,7 +54,8 @@ export class AuthController {
   }
 
   @Get('test/supervisor')
-  @UseGuards(SupervisorGuard)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('ADMIN', 'EMPLEADO', 'SUPERVISOR')
   testSupervisor(@Request() req) {
     return {
       mensaje: 'Todos los roles pueden ver esto',

@@ -2,6 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UserService } from 'src/user/user.service';
 import { LoginDto } from './dto/auth.dto';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AuthService {
@@ -17,8 +18,10 @@ export class AuthService {
     // 1. Buscar usuario por nombre de usuario
     const usuario = await this.usersService.findByUsername(nombre_usuario);
 
+
+
     // 2. Verificar que existe y la contraseña es correcta
-    if (!usuario || usuario.contrasena !== contrasena) {
+    if (!usuario || !(await bcrypt.compare(contrasena, usuario.contrasena))) {
       throw new UnauthorizedException('Credenciales incorrectas');
     }
 

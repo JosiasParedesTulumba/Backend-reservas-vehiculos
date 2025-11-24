@@ -17,6 +17,7 @@ import { HVehiculoModule } from './h-vehiculo/h-vehiculo.module';
 import { HVehiculo } from './h-vehiculo/entities/h-vehiculo.entity';
 import { Reserva } from './reserva/entities/reserva.entity';
 import { Pago } from './pago/entities/pago.entity';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { Pago } from './pago/entities/pago.entity';
     ReservaModule,
     PagoModule,
     HVehiculoModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [AppService],

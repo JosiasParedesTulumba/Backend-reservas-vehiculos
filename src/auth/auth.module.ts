@@ -20,10 +20,7 @@ import { RolesGuard } from './guards/roles.guard';
   providers: [
     AuthService, 
     JwtStrategy,
-    {
-      provide: 'APP_GUARD',
-      useClass: RolesGuard,
-    }
+    RolesGuard, // Disponible para usar en controladores, pero no como guard global
   ],
   exports: [AuthService, JwtModule],
 })

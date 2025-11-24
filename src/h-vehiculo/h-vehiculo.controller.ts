@@ -3,11 +3,13 @@ import { HVehiculoService } from './h-vehiculo.service';
 import { CreateHVehiculoDto } from './dto/create-h-vehiculo.dto';
 import { UpdateHVehiculoDto } from './dto/update-h-vehiculo.dto';
 import { HVehiculo } from './entities/h-vehiculo.entity';
-import { EmpleadoGuard, SupervisorGuard } from '../auth/guards/auth.guard';
+import { AuthGuard } from '@nestjs/passport';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { RolesGuard } from '../auth/guards/roles.guard';
 
 @Controller('h-vehiculo')
-@UseGuards(SupervisorGuard) // Proteger todas las rutas por defecto
-@UseGuards(EmpleadoGuard) // Permite también a empleados
+@UseGuards(AuthGuard('jwt'), RolesGuard)
+@Roles('ADMIN', 'EMPLEADO', 'SUPERVISOR')
 export class HVehiculoController {
   constructor(private readonly hVehiculoService: HVehiculoService) { }
 

@@ -17,9 +17,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   async validate(payload: any) {
     // Validar que el usuario sigue existiendo y activo
     const usuario = await this.userService.findOne(payload.usuario_id);
-    if (!usuario) {
-      throw new UnauthorizedException('Usuario no válido');
+    if (!usuario || usuario.estado_usuario !== 1) {
+      throw new UnauthorizedException('Usuario no válido o inactivo');
     }
+    // Retornar usuario con rol cargado desde BD
     return usuario;
   }
 }

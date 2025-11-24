@@ -2,7 +2,9 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@n
 import { VehiculoService } from './vehiculo.service';
 import { CreateVehiculoDto } from './dto/create-vehiculo.dto';
 import { UpdateVehiculoDto } from './dto/update-vehiculo.dto';
-import { AdminGuard, EmpleadoGuard, SupervisorGuard } from 'src/auth/guards/auth.guard';
+import { AuthGuard } from '@nestjs/passport';
+import { Roles } from 'src/auth/decorators/roles.decorator';
+import { RolesGuard } from 'src/auth/guards/roles.guard';
 
 @Controller('vehiculo')
 export class VehiculoController {
@@ -13,42 +15,48 @@ export class VehiculoController {
 
   // Listar todos los vehículos
   @Get()
-  @UseGuards(SupervisorGuard) // Todos pueden ver
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('ADMIN', 'EMPLEADO', 'SUPERVISOR')
   findAll() {
     return this.vehiculoService.findAll();
   }
 
   // Obtener matrículas de vehículos y mostrar en un select
   @Get('matriculas/lista')
-  @UseGuards(EmpleadoGuard)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('ADMIN', 'EMPLEADO')
   getMatriculas() {
     return this.vehiculoService.getMatriculas();
   }
 
   // Ver vehículo específico
   @Get(':id')
-  @UseGuards(SupervisorGuard)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('ADMIN', 'EMPLEADO', 'SUPERVISOR')
   findOne(@Param('id') id: string) {
     return this.vehiculoService.findOne(+id);
   }
 
   // Vehículos disponibles (para hacer reservas)
   @Get('estado/disponibles')
-  @UseGuards(EmpleadoGuard) // Admin y Empleado
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('ADMIN', 'EMPLEADO')
   findDisponibles() {
     return this.vehiculoService.findDisponibles();
   }
 
   // Buscar por tipo
   @Get('tipo/:tipo')
-  @UseGuards(SupervisorGuard)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('ADMIN', 'EMPLEADO', 'SUPERVISOR')
   findByTipo(@Param('tipo') tipo: string) {
     return this.vehiculoService.findByTipo(+tipo);
   }
 
   // Estadísticas
   @Get('estadisticas/general')
-  @UseGuards(SupervisorGuard)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('ADMIN', 'EMPLEADO', 'SUPERVISOR')
   getStats() {
     return this.vehiculoService.getStats();
   }
@@ -57,21 +65,24 @@ export class VehiculoController {
 
   // Crear vehículo
   @Post()
-  @UseGuards(EmpleadoGuard) // Admin y Empleado pueden crear
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('ADMIN', 'EMPLEADO')
   create(@Body() createVehiculoDto: CreateVehiculoDto) {
     return this.vehiculoService.create(createVehiculoDto);
   }
 
   // Actualizar vehículo
   @Patch(':id')
-  @UseGuards(EmpleadoGuard) // Admin y Empleado pueden actualizar
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('ADMIN', 'EMPLEADO')
   update(@Param('id') id: string, @Body() updateVehiculoDto: UpdateVehiculoDto) {
     return this.vehiculoService.update(+id, updateVehiculoDto);
   }
 
   // Cambiar estado del vehículo
   @Patch(':id/estado')
-  @UseGuards(EmpleadoGuard)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('ADMIN', 'EMPLEADO')
   cambiarEstado(
     @Param('id') id: string,
     @Body() body: { estado_vehiculo: number }
@@ -81,7 +92,8 @@ export class VehiculoController {
 
   // Eliminar vehículo
   @Delete(':id')
-  @UseGuards(AdminGuard) // Solo admin puede eliminar
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('ADMIN')
   remove(@Param('id') id: string) {
     return this.vehiculoService.remove(+id);
   }

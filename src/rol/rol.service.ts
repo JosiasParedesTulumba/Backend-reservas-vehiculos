@@ -41,7 +41,7 @@ export class RolService {
 
     async update(rol_id: number, updateRolDto: UpdateRolDto) {
       const rol = await this.findOne(rol_id);
-      await this.rolesRepository.update(rol, updateRolDto);
+      await this.rolesRepository.update(rol_id, updateRolDto);
       return this.findOne(rol_id);
     }
   
