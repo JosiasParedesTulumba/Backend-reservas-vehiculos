@@ -4,11 +4,14 @@ import { VehiculoService } from 'src/vehiculo/vehiculo.service';
 @Injectable()
 export class DashboardService {
 
-    // constructor(
-    //     private vehiculoService: VehiculoService,
-    // ) {}
+    constructor(
+        private vehiculoService: VehiculoService,
+    ) { }
 
-    // async vehiculosDisponibles(){
-    //     return this.vehiculoService.findDisponibles();
-    // }
+    async vehiculosDisponibles() {
+        const vehiculos = await this.vehiculoService.findDisponibles();
+        return {
+            cantidad: vehiculos.length
+        };
+    }
 }
