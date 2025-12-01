@@ -6,12 +6,14 @@ import { Reserva } from './entities/reserva.entity';
 import { Vehiculo } from 'src/vehiculo/entities/vehiculo.entity';
 import { Persona } from 'src/persona/entities/persona.entity';
 import { User } from 'src/user/entities/user.entity';
+import { VehiculoModule } from 'src/vehiculo/vehiculo.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Reserva, Vehiculo, Persona, User]),
+    VehiculoModule,
   ],
   controllers: [ReservaController],
   providers: [ReservaService],
 })
-export class ReservaModule {}
+export class ReservaModule { }

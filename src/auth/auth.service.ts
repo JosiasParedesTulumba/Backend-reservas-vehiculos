@@ -18,8 +18,6 @@ export class AuthService {
     // 1. Buscar usuario por nombre de usuario
     const usuario = await this.usersService.findByUsername(nombre_usuario);
 
-
-
     // 2. Verificar que existe y la contraseña es correcta
     if (!usuario || !(await bcrypt.compare(contrasena, usuario.contrasena))) {
       throw new UnauthorizedException('Credenciales incorrectas');

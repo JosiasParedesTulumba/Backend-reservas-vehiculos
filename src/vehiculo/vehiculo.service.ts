@@ -1,16 +1,19 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException, Inject, forwardRef } from '@nestjs/common';
 import { CreateVehiculoDto } from './dto/create-vehiculo.dto';
 import { UpdateVehiculoDto } from './dto/update-vehiculo.dto';
 import { Vehiculo } from './entities/vehiculo.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { VehicleStatusScheduler } from './vehicle-status.scheduler';
 
 @Injectable()
 export class VehiculoService {
-    
+
     constructor(
         @InjectRepository(Vehiculo)
-        private vehiculoRepository: Repository<Vehiculo>
+        private vehiculoRepository: Repository<Vehiculo>,
+        @Inject(forwardRef(() => VehicleStatusScheduler))
+        private vehicleScheduler: VehicleStatusScheduler
     ) { }
 
     // Crear Vehiculo
@@ -140,5 +143,22 @@ export class VehiculoService {
             select: ['vehiculo_id', 'matricula'],
             order: { matricula: 'ASC' }
         });
+    }
+
+    // Resetear todos los estados de vehículos a DISPONIBLE y recalcular
+    async resetearEstados() {
+        // 1. Poner todos los vehículos activos en DISPONIBLE
+        await this.vehiculoRepository.update(
+            { estado_actual: 1 },
+            { estado_vehiculo: 3 }
+        );
+
+        // 2. Recalcular estados basándose en reservas activas
+        await this.vehicleScheduler.actualizarEstadosAutomaticamente();
+
+        return {
+            message: 'Estados de vehículos reseteados y recalculados correctamente',
+            nota: 'Todos los vehículos se pusieron en DISPONIBLE y luego se actualizaron según sus reservas activas'
+        };
     }
 }

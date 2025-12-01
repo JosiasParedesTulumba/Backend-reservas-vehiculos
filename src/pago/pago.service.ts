@@ -16,10 +16,10 @@ export class PagoService {
   ) { }
 
   async create(createPagoDto: CreatePagoDto) {
-    // Cargar la reserva CON todas sus relaciones
+
     const reserva = await this.reservaRepository.findOne({
       where: { reserva_id: createPagoDto.reserva_id },
-      relations: ['persona', 'vehiculo', 'usuario'] // IMPORTANTE: Cargar relaciones
+      relations: ['persona', 'vehiculo', 'usuario']
     });
     if (!reserva) throw new NotFoundException('Reserva no encontrada');
 
@@ -49,11 +49,11 @@ export class PagoService {
     // CRÍTICO: Cargar TODAS las relaciones anidadas
     return await this.pagoRepository.find({
       relations: [
-        'reserva',              
-        'reserva.persona',      
-        'reserva.vehiculo',     
-        'reserva.usuario',      
-        'usuario'              
+        'reserva',
+        'reserva.persona',
+        'reserva.vehiculo',
+        'reserva.usuario',
+        'usuario'
       ],
       order: {
         fecha_pago: 'DESC'

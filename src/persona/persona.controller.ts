@@ -19,8 +19,6 @@ export class PersonaController {
     return this.personaService.create(createPersonaDto)
   }
 
-  // CONSULTAS (todos los supervisores+ pueden ver)
-
   @Get()
   @Roles('ADMIN', 'EMPLEADO', 'SUPERVISOR')
   findAll() {

@@ -98,4 +98,12 @@ export class VehiculoController {
     return this.vehiculoService.remove(+id);
   }
 
+  // Endpoint temporal para resetear estados de vehículos
+  @Post('reset-estados')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('ADMIN')
+  async resetEstados() {
+    return this.vehiculoService.resetearEstados();
+  }
+
 }

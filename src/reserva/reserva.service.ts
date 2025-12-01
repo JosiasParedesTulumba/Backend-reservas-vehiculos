@@ -7,6 +7,7 @@ import { Persona } from 'src/persona/entities/persona.entity';
 import { User } from 'src/user/entities/user.entity';
 import { CreateReservaDto } from './dto/create-reserva.dto';
 import { UpdateReservaDto } from './dto/update-reserva.dto';
+import { VehicleStatusScheduler } from 'src/vehiculo/vehicle-status.scheduler';
 
 @Injectable()
 export class ReservaService {
@@ -20,6 +21,7 @@ export class ReservaService {
         private readonly personaRepository: Repository<Persona>,
         @InjectRepository(User)
         private readonly userRepository: Repository<User>,
+        private readonly vehicleScheduler: VehicleStatusScheduler,
     ) { }
 
     async create(createReservaDto: CreateReservaDto, userId: number): Promise<Reserva> {
@@ -76,7 +78,16 @@ export class ReservaService {
             usuario: { usuario_id: userId }
         });
 
-        return await this.reservaRepository.save(reserva);
+        const reservaGuardada = await this.reservaRepository.save(reserva);
+
+        // ✅ Actualizar estado del vehículo inmediatamente
+        const nuevoEstado = await this.vehicleScheduler.calcularEstado(createReservaDto.vehiculo_id);
+        await this.vehiculoRepository.update(
+            { vehiculo_id: createReservaDto.vehiculo_id },
+            { estado_vehiculo: nuevoEstado }
+        );
+
+        return reservaGuardada;
     }
 
     async findAll(): Promise<Reserva[]> {
@@ -152,7 +163,19 @@ export class ReservaService {
         // Actualizar el resto de campos
         Object.assign(reserva, updateReservaDto);
 
-        return this.reservaRepository.save(reserva);
+        const reservaActualizada = await this.reservaRepository.save(reserva);
+
+        // ✅ Actualizar estado del vehículo inmediatamente
+        const vehiculoId = reserva.vehiculo?.vehiculo_id;
+        if (vehiculoId) {
+            const nuevoEstado = await this.vehicleScheduler.calcularEstado(vehiculoId);
+            await this.vehiculoRepository.update(
+                { vehiculo_id: vehiculoId },
+                { estado_vehiculo: nuevoEstado }
+            );
+        }
+
+        return reservaActualizada;
     }
 
     async remove(id: number): Promise<void> {
@@ -166,7 +189,20 @@ export class ReservaService {
     async cancel(id: number): Promise<Reserva> {
         const reserva = await this.findOne(id);
         reserva.estado_reserva = 0; // 0 para cancelado/inactivo
-        return await this.reservaRepository.save(reserva);
+
+        const reservaCancelada = await this.reservaRepository.save(reserva);
+
+        // ✅ Actualizar estado del vehículo inmediatamente
+        const vehiculoId = reserva.vehiculo?.vehiculo_id;
+        if (vehiculoId) {
+            const nuevoEstado = await this.vehicleScheduler.calcularEstado(vehiculoId);
+            await this.vehiculoRepository.update(
+                { vehiculo_id: vehiculoId },
+                { estado_vehiculo: nuevoEstado }
+            );
+        }
+
+        return reservaCancelada;
     }
 
     // Método para obtener las reservas de un vehículo

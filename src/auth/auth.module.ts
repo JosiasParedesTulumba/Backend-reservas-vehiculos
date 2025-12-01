@@ -18,10 +18,10 @@ import { RolesGuard } from './guards/roles.guard';
   ],
   controllers: [AuthController],
   providers: [
-    AuthService, 
+    AuthService,
     JwtStrategy,
-    RolesGuard, // Disponible para usar en controladores, pero no como guard global
+    RolesGuard,
   ],
   exports: [AuthService, JwtModule],
 })
-export class AuthModule {}
+export class AuthModule { }
