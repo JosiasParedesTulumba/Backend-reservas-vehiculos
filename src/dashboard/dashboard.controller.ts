@@ -12,4 +12,9 @@ export class DashboardController {
     async vehiculosDisponibles() {
         return await this.dashboardService.vehiculosDisponibles();
     }
+
+    @Get('cantidad/reservas-activas')
+    async reservasActivas() {
+        return await this.dashboardService.reservasActivas();
+    }
 }

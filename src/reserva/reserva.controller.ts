@@ -1,5 +1,6 @@
-import { Controller, Get, Post, Body, Param, Delete, Req, ParseIntPipe, Put, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, Req, ParseIntPipe, Put, UseGuards, Patch } from '@nestjs/common';
 import { ReservaService } from './reserva.service';
+import { EstadoReserva } from './entities/reserva.entity';
 import { CreateReservaDto } from './dto/create-reserva.dto';
 import { UpdateReservaDto } from './dto/update-reserva.dto';
 import { AuthGuard } from '@nestjs/passport';
@@ -10,7 +11,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 export class ReservaController {
 
   constructor(private readonly reservaService: ReservaService) { }
-  
+
   @Post()
   @UseGuards(AuthGuard('jwt'))
   async create(@Body() createReservaDto: CreateReservaDto, @Req() req: any) {
@@ -57,5 +58,24 @@ export class ReservaController {
   @Roles('ADMIN', 'EMPLEADO')
   async cancel(@Param('id', ParseIntPipe) id: number) {
     return this.reservaService.cancel(id);
+  }
+
+  @Patch(':id/confirmar')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('ADMIN', 'EMPLEADO')
+  async confirmarReserva(@Param('id', ParseIntPipe) id: number) {
+    return this.reservaService.confirmarReserva(id);
+  }
+
+  @Get('estadisticas/globales')
+  @UseGuards(AuthGuard('jwt'))
+  async getEstadisticas() {
+    return this.reservaService.getEstadisticas();
+  }
+
+  @Get('estado/:estado')
+  @UseGuards(AuthGuard('jwt'))
+  async getReservasPorEstado(@Param('estado', ParseIntPipe) estado: number) {
+    return this.reservaService.findByEstado(estado as EstadoReserva);
   }
 }

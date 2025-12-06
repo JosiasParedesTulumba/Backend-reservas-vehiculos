@@ -38,7 +38,6 @@ export class VehiculoService {
 
     async findAll() {
         return await this.vehiculoRepository.find({
-            where: { estado_actual: 1 }, // Solo vehiculos activos
             order: { fecha_creacion: 'ASC' }, // Ordenar por fecha de creacion
         });
     }
@@ -91,16 +90,52 @@ export class VehiculoService {
             }
         }
 
-        await this.vehiculoRepository.update(vehiculo_id, updateVehiculoDto);
+        // Filtrar solo los campos que tienen valores (no undefined ni null)
+        console.log('DTO recibido:', updateVehiculoDto);
+
+        const camposActualizar = Object.fromEntries(
+            Object.entries(updateVehiculoDto).filter(([_, value]) => value !== undefined && value !== null)
+        );
+
+        console.log('Campos a actualizar:', camposActualizar);
+
+        if (Object.keys(camposActualizar).length > 0) {
+            await this.vehiculoRepository.update(vehiculo_id, camposActualizar);
+        }
 
         return this.findOne(vehiculo_id);
     }
 
     // Eliminar Vehiculo
     async remove(vehiculo_id: number) {
-        const vehiculo = await this.findOne(vehiculo_id);
-        await this.vehiculoRepository.delete(vehiculo_id);
-        return { message: 'Vehículo eliminado correctamente' };
+        const vehiculo = await this.vehiculoRepository.findOne({
+            where: { vehiculo_id: vehiculo_id },
+            relations: ['reserva']
+        });
+
+        if (!vehiculo) {
+            throw new NotFoundException(`Vehículo con ID ${vehiculo_id} no encontrado`);
+        }
+
+        // Verificar si tiene reservas activas (EN_CURSO o CONFIRMADA)
+        const reservasActivas = vehiculo.reserva?.filter(reserva =>
+            reserva.estado_reserva === 2 || // CONFIRMADA
+            reserva.estado_reserva === 3    // EN_CURSO
+        ) || [];
+
+        if (reservasActivas.length > 0) {
+            throw new BadRequestException(
+                'No se puede eliminar el vehículo porque tiene reservas activas o confirmadas'
+            );
+        }
+
+        // Safe delete: cambiar estado_actual a 0 (inactivo)
+        await this.vehiculoRepository.update(vehiculo_id, { estado_actual: 0 });
+
+        return {
+            message: 'Vehículo marcado como inactivo correctamente',
+            vehiculo_id: vehiculo_id
+        };
     }
 
     // Cambiar estado del vehículo (disponible, reservado, mantenimiento)

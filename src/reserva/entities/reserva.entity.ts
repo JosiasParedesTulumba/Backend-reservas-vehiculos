@@ -4,6 +4,14 @@ import { User } from "src/user/entities/user.entity";
 import { Vehiculo } from "src/vehiculo/entities/vehiculo.entity";
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 
+export enum EstadoReserva {
+    CANCELADA = 0,
+    PENDIENTE = 1,
+    CONFIRMADA = 2,
+    EN_CURSO = 3,
+    COMPLETADA = 4
+}
+
 @Entity('reserva')
 export class Reserva {
 
@@ -25,7 +33,7 @@ export class Reserva {
     @OneToMany(() => Pago, pago => pago.reserva)
     pago: Pago[];
 
-    @Column({ type: 'datetime'})
+    @Column({ type: 'datetime' })
     fecha_reserva: Date;
 
     @Column({ type: 'datetime' })

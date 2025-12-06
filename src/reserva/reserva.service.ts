@@ -1,7 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Reserva } from './entities/reserva.entity';
+import { EstadoReserva } from './entities/reserva.entity';
 import { Vehiculo } from 'src/vehiculo/entities/vehiculo.entity';
 import { Persona } from 'src/persona/entities/persona.entity';
 import { User } from 'src/user/entities/user.entity';
@@ -53,7 +54,9 @@ export class ReservaService {
         const reservaExistente = await this.reservaRepository
             .createQueryBuilder('reserva')
             .where('reserva.vehiculo_id = :vehiculoId', { vehiculoId: createReservaDto.vehiculo_id })
-            .andWhere('reserva.estado_reserva = 1') // Solo reservas activas
+            .andWhere('reserva.estado_reserva IN (:...estados)', {
+                estados: [EstadoReserva.CONFIRMADA, EstadoReserva.EN_CURSO]
+            })
             .andWhere(
                 '(reserva.fecha_inicio <= :fechaFin AND reserva.fecha_fin >= :fechaInicio)',
                 {
@@ -72,7 +75,7 @@ export class ReservaService {
             fecha_inicio: createReservaDto.fecha_inicio,
             fecha_fin: createReservaDto.fecha_fin,
             descripcion: createReservaDto.descripcion,
-            estado_reserva: createReservaDto.estado_reserva || 1, // Valor por defecto explícito
+            estado_reserva: EstadoReserva.PENDIENTE, // Inicia como PENDIENTE
             vehiculo: { vehiculo_id: createReservaDto.vehiculo_id },
             persona: { persona_id: createReservaDto.persona_id },
             usuario: { usuario_id: userId }
@@ -80,19 +83,49 @@ export class ReservaService {
 
         const reservaGuardada = await this.reservaRepository.save(reserva);
 
-        // ✅ Actualizar estado del vehículo inmediatamente
-        const nuevoEstado = await this.vehicleScheduler.calcularEstado(createReservaDto.vehiculo_id);
-        await this.vehiculoRepository.update(
-            { vehiculo_id: createReservaDto.vehiculo_id },
-            { estado_vehiculo: nuevoEstado }
-        );
+        // No actualizamos estado del vehículo aquí porque está PENDIENTE
+        // Se actualizará cuando se CONFIRME
+
+        return reservaGuardada;
 
         return reservaGuardada;
     }
 
+    async confirmarReserva(reserva_id: number): Promise<Reserva> {
+        const reserva = await this.reservaRepository.findOne({
+            where: { reserva_id: reserva_id },
+            relations: ['vehiculo', 'persona', 'usuario', 'pago']
+        });
+
+        if (!reserva) {
+            throw new NotFoundException(`Reserva con ID ${reserva_id} no encontrada`);
+        }
+
+        if (reserva.estado_reserva !== EstadoReserva.PENDIENTE) {
+            throw new BadRequestException('Solo se pueden confirmar reservas pendientes');
+        }
+
+        if (!reserva.pago || reserva.pago.length === 0) {
+            throw new BadRequestException('La reserva debe tener al menos un pago asociado para ser confirmada');
+        }
+
+        // Cambiar estado a CONFIRMADA
+        reserva.estado_reserva = EstadoReserva.CONFIRMADA;
+        const reservaConfirmada = await this.reservaRepository.save(reserva);
+
+        // Actualizar estado del vehículo
+        const nuevoEstado = await this.vehicleScheduler.calcularEstado(reserva.vehiculo.vehiculo_id);
+        await this.vehiculoRepository.update(
+            { vehiculo_id: reserva.vehiculo.vehiculo_id },
+            { estado_vehiculo: nuevoEstado }
+        );
+
+        return reservaConfirmada;
+    }
+
     async findAll(): Promise<Reserva[]> {
         return await this.reservaRepository.find({
-            relations: ['vehiculo', 'persona', 'usuario'],
+            relations: ['vehiculo', 'persona', 'usuario', 'pago'],
             order: { fecha_reserva: 'ASC' }
         });
     }
@@ -100,7 +133,7 @@ export class ReservaService {
     async findOne(id: number): Promise<Reserva> {
         const reserva = await this.reservaRepository.findOne({
             where: { reserva_id: id },
-            relations: ['vehiculo', 'persona', 'usuario']
+            relations: ['vehiculo', 'persona', 'usuario', 'pago']
         });
 
         if (!reserva) {
@@ -134,7 +167,9 @@ export class ReservaService {
             const reservaExistente = await this.reservaRepository
                 .createQueryBuilder('reserva')
                 .where('reserva.vehiculo_id = :vehiculoId', { vehiculoId })
-                .andWhere('reserva.estado_reserva = 1') // Solo reservas activas
+                .andWhere('reserva.estado_reserva IN (:...estados)', {
+                    estados: [EstadoReserva.CONFIRMADA, EstadoReserva.EN_CURSO]
+                })
                 .andWhere('reserva.reserva_id != :reservaId', { reservaId: id }) // Excluir la reserva actual
                 .andWhere(
                     '(reserva.fecha_inicio <= :fechaFin AND reserva.fecha_fin >= :fechaInicio)',
@@ -188,7 +223,12 @@ export class ReservaService {
     // Método para cancelar una reserva (cambiar estado a inactivo)
     async cancel(id: number): Promise<Reserva> {
         const reserva = await this.findOne(id);
-        reserva.estado_reserva = 0; // 0 para cancelado/inactivo
+
+        if ([EstadoReserva.COMPLETADA, EstadoReserva.CANCELADA].includes(reserva.estado_reserva)) {
+            throw new BadRequestException('No se puede cancelar una reserva en este estado');
+        }
+
+        reserva.estado_reserva = EstadoReserva.CANCELADA;
 
         const reservaCancelada = await this.reservaRepository.save(reserva);
 
@@ -209,7 +249,7 @@ export class ReservaService {
     async findByVehiculo(vehiculoId: number): Promise<Reserva[]> {
         return await this.reservaRepository.find({
             where: { vehiculo: { vehiculo_id: vehiculoId } },
-            relations: ['vehiculo', 'persona', 'usuario'],
+            relations: ['vehiculo', 'persona', 'usuario', 'pago'],
             order: { fecha_inicio: 'ASC' }
         });
     }
@@ -218,8 +258,33 @@ export class ReservaService {
     async findByUsuario(usuarioId: number): Promise<Reserva[]> {
         return await this.reservaRepository.find({
             where: { usuario: { usuario_id: usuarioId } },
-            relations: ['vehiculo', 'persona', 'usuario'],
+            relations: ['vehiculo', 'persona', 'usuario', 'pago'],
             order: { fecha_inicio: 'DESC' }
         });
+    }
+    async findByEstado(estado: EstadoReserva): Promise<Reserva[]> {
+        return await this.reservaRepository.find({
+            where: { estado_reserva: estado },
+            relations: ['vehiculo', 'persona', 'usuario', 'pago'],
+            order: { fecha_reserva: 'DESC' }
+        });
+    }
+
+    async getEstadisticas() {
+        const total = await this.reservaRepository.count();
+        const pendientes = await this.reservaRepository.count({ where: { estado_reserva: EstadoReserva.PENDIENTE } });
+        const confirmadas = await this.reservaRepository.count({ where: { estado_reserva: EstadoReserva.CONFIRMADA } });
+        const enCurso = await this.reservaRepository.count({ where: { estado_reserva: EstadoReserva.EN_CURSO } });
+        const completadas = await this.reservaRepository.count({ where: { estado_reserva: EstadoReserva.COMPLETADA } });
+        const canceladas = await this.reservaRepository.count({ where: { estado_reserva: EstadoReserva.CANCELADA } });
+
+        return {
+            total,
+            pendientes,
+            confirmadas,
+            en_curso: enCurso,
+            completadas,
+            canceladas
+        };
     }
 }

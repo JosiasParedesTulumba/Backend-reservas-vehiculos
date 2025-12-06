@@ -15,5 +15,6 @@ import { VehiculoModule } from 'src/vehiculo/vehiculo.module';
   ],
   controllers: [ReservaController],
   providers: [ReservaService],
+  exports: [ReservaService],
 })
 export class ReservaModule { }
