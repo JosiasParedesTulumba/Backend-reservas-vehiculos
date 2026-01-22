@@ -37,6 +37,12 @@ export class PersonaController {
     return this.personaService.findEmpleados();
   }
 
+  @Get('empleados/inactivos')
+  @Roles('ADMIN')
+  findEmpleadosInactivos() {
+    return this.personaService.findEmpleadosInactivos();
+  }
+
   @Get('stats')
   @Roles('ADMIN', 'EMPLEADO', 'SUPERVISOR')
   getStats() {
@@ -70,5 +76,12 @@ export class PersonaController {
   @Roles('ADMIN')
   remove(@Param('id') id: string) {
     return this.personaService.remove(+id);
+  }
+
+  @Patch(':id/reactivar')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('ADMIN')
+  reactivate(@Param('id') id: string) {
+    return this.personaService.reactivate(+id);
   }
 }

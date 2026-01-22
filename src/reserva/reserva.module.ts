@@ -7,10 +7,11 @@ import { Vehiculo } from 'src/vehiculo/entities/vehiculo.entity';
 import { Persona } from 'src/persona/entities/persona.entity';
 import { User } from 'src/user/entities/user.entity';
 import { VehiculoModule } from 'src/vehiculo/vehiculo.module';
+import { Pago } from 'src/pago/entities/pago.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Reserva, Vehiculo, Persona, User]),
+    TypeOrmModule.forFeature([Reserva, Vehiculo, Persona, User, Pago]),
     VehiculoModule,
   ],
   controllers: [ReservaController],

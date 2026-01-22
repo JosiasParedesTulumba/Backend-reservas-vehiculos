@@ -4,6 +4,7 @@ import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "t
 
 @Entity('historial_vehiculo')
 export class HVehiculo {
+
     @PrimaryGeneratedColumn({ name: 'historial_id' })
     historial_id: number;
 

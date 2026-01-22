@@ -15,12 +15,15 @@ export class AuthService {
   async login(loginDto: LoginDto) {
     const { nombre_usuario, contrasena } = loginDto;
 
-    // 1. Buscar usuario por nombre de usuario
+    // 1. Buscar usuario activo por nombre de usuario
     const usuario = await this.usersService.findByUsername(nombre_usuario);
 
-    // 2. Verificar que existe y la contraseña es correcta
-    if (!usuario || !(await bcrypt.compare(contrasena, usuario.contrasena))) {
-      throw new UnauthorizedException('Credenciales incorrectas');
+    // 2. Verificar que existe, está activo y la contraseña es correcta
+    const credencialesValidas = usuario && await bcrypt.compare(contrasena, usuario.contrasena);
+    const personaActiva = usuario?.persona?.estado_persona !== 0;
+
+    if (!credencialesValidas || !personaActiva) {
+      throw new UnauthorizedException('Credenciales incorrectas o usuario inactivo');
     }
 
     // 3. Crear payload para JWT

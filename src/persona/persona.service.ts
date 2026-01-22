@@ -132,21 +132,37 @@ export class PersonaService {
         return this.findOne(persona_id);
     }
 
-    // Eliminar persona
+    // Inactivar persona (soft delete)
     async remove(persona_id: number) {
         const persona = await this.findOne(persona_id);
 
-        // Si es empleado, también desactivar usuario
+        // Si es empleado, desactivar también el usuario vinculado
         if (persona.tipo_persona === 2 && persona.usuario) {
-            await this.userRepository.delete(persona.usuario.usuario_id);
+            await this.userRepository.update(persona.usuario.usuario_id, { estado_usuario: 0 });
         }
 
-        // Elimina la persona de la BD 
-        await this.personasRepository.delete(persona_id);
+        await this.personasRepository.update(persona_id, { estado_persona: 0 });
+        return { message: 'Persona inactivada correctamente' };
+    }
 
-        // Soft delete de la persona (cambia el estado de la persona y no se visualiza)
-        // await this.personasRepository.update(persona_id, { estado_persona: 0 });
-        return { message: 'Persona eliminada correctamente' };
+    // Reactivar persona inactiva
+    async reactivate(persona_id: number) {
+        const persona = await this.findOne(persona_id);
+
+        if (persona.tipo_persona === 2 && persona.usuario) {
+            await this.userRepository.update(persona.usuario.usuario_id, { estado_usuario: 1 });
+        }
+
+        await this.personasRepository.update(persona_id, { estado_persona: 1 });
+        return this.findOne(persona_id);
+    }
+
+    async findEmpleadosInactivos() {
+        return await this.personasRepository.find({
+            relations: ['usuario', 'usuario.rol'],
+            where: { tipo_persona: 2, estado_persona: 0 },
+            order: { fecha_creacion: 'DESC' }
+        });
     }
 
     // Obtener estadísticas

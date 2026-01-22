@@ -67,12 +67,6 @@ export class ReservaController {
     return this.reservaService.confirmarReserva(id);
   }
 
-  @Get('estadisticas/globales')
-  @UseGuards(AuthGuard('jwt'))
-  async getEstadisticas() {
-    return this.reservaService.getEstadisticas();
-  }
-
   @Get('estado/:estado')
   @UseGuards(AuthGuard('jwt'))
   async getReservasPorEstado(@Param('estado', ParseIntPipe) estado: number) {

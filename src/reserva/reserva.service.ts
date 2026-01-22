@@ -9,6 +9,7 @@ import { User } from 'src/user/entities/user.entity';
 import { CreateReservaDto } from './dto/create-reserva.dto';
 import { UpdateReservaDto } from './dto/update-reserva.dto';
 import { VehicleStatusScheduler } from 'src/vehiculo/vehicle-status.scheduler';
+import { Pago } from 'src/pago/entities/pago.entity';
 
 @Injectable()
 export class ReservaService {
@@ -22,6 +23,8 @@ export class ReservaService {
         private readonly personaRepository: Repository<Persona>,
         @InjectRepository(User)
         private readonly userRepository: Repository<User>,
+        @InjectRepository(Pago)
+        private readonly pagoRepository: Repository<Pago>,
         private readonly vehicleScheduler: VehicleStatusScheduler,
     ) { }
 
@@ -144,10 +147,10 @@ export class ReservaService {
     }
 
     async update(id: number, updateReservaDto: UpdateReservaDto): Promise<Reserva> {
-        // Cargar la reserva con la relación de vehículo
+        // Cargar la reserva con la relación de vehículo y pagos
         const reserva = await this.reservaRepository.findOne({
             where: { reserva_id: id },
-            relations: ['vehiculo']
+            relations: ['vehiculo', 'pago']
         });
 
         if (!reserva) {
@@ -195,10 +198,39 @@ export class ReservaService {
             delete updateReservaDto.vehiculo_id; // Eliminamos para evitar sobrescribir la relación
         }
 
+        // Guardar fechas previas para calcular ajustes de pago
+        const fechaInicioAnterior = reserva.fecha_inicio;
+        const fechaFinAnterior = reserva.fecha_fin;
+
         // Actualizar el resto de campos
         Object.assign(reserva, updateReservaDto);
 
         const reservaActualizada = await this.reservaRepository.save(reserva);
+
+        // Si cambió el rango de fechas, recalcular monto y ajustar el pago principal
+        const fechasCambiarion = !!updateReservaDto.fecha_inicio || !!updateReservaDto.fecha_fin;
+        if (fechasCambiarion && reservaActualizada.vehiculo) {
+            const fechaInicioNueva = new Date(reservaActualizada.fecha_inicio);
+            const fechaFinNueva = new Date(reservaActualizada.fecha_fin);
+
+            const dias = Math.max(1, Math.ceil(
+                (fechaFinNueva.getTime() - fechaInicioNueva.getTime()) / (1000 * 60 * 60 * 24)
+            ));
+
+            const nuevoMonto = dias * Number(reservaActualizada.vehiculo.precio);
+
+            // Tomar el primer pago asociado como principal
+            const pagoPrincipal = reserva.pago?.[0];
+            if (pagoPrincipal) {
+                const montoAnterior = Number(pagoPrincipal.monto);
+                const ajuste = nuevoMonto - montoAnterior;
+
+                await this.pagoRepository.update(pagoPrincipal.pago_id, {
+                    monto: nuevoMonto.toFixed(2),
+                    monto_ajuste: ajuste.toFixed(2),
+                });
+            }
+        }
 
         // ✅ Actualizar estado del vehículo inmediatamente
         const vehiculoId = reserva.vehiculo?.vehiculo_id;
@@ -268,23 +300,5 @@ export class ReservaService {
             relations: ['vehiculo', 'persona', 'usuario', 'pago'],
             order: { fecha_reserva: 'DESC' }
         });
-    }
-
-    async getEstadisticas() {
-        const total = await this.reservaRepository.count();
-        const pendientes = await this.reservaRepository.count({ where: { estado_reserva: EstadoReserva.PENDIENTE } });
-        const confirmadas = await this.reservaRepository.count({ where: { estado_reserva: EstadoReserva.CONFIRMADA } });
-        const enCurso = await this.reservaRepository.count({ where: { estado_reserva: EstadoReserva.EN_CURSO } });
-        const completadas = await this.reservaRepository.count({ where: { estado_reserva: EstadoReserva.COMPLETADA } });
-        const canceladas = await this.reservaRepository.count({ where: { estado_reserva: EstadoReserva.CANCELADA } });
-
-        return {
-            total,
-            pendientes,
-            confirmadas,
-            en_curso: enCurso,
-            completadas,
-            canceladas
-        };
     }
 }

@@ -1,6 +1,6 @@
-import { Type } from 'class-transformer';
-import { IsDateString, IsInt, IsOptional, Min } from 'class-validator';
-import { IsDecimal } from 'class-validator';
+import { Type } from "class-transformer";
+import { IsDateString, IsDecimal, IsInt, IsOptional, Min } from "class-validator";
+
 
 export class CreatePagoDto {
   @Type(() => Number)

@@ -9,36 +9,36 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 @Controller('pago')
 @UseGuards(AuthGuard('jwt'), RolesGuard)
 export class PagoController {
-  
-  constructor(private readonly pagoService: PagoService) {}
+
+  constructor(private readonly pagoService: PagoService) { }
 
   @Post()
   @Roles('ADMIN', 'EMPLEADO')
-  create(@Body() createPagoDto: CreatePagoDto) {
+  async create(@Body() createPagoDto: CreatePagoDto) {
     return this.pagoService.create(createPagoDto);
   }
 
   @Get()
   @Roles('ADMIN', 'EMPLEADO', 'SUPERVISOR')
-  findAll() {
+  async findAll() {
     return this.pagoService.findAll();
   }
 
   @Get(':id')
   @Roles('ADMIN', 'EMPLEADO', 'SUPERVISOR')
-  findOne(@Param('id') id: string) {
+  async findOne(@Param('id') id: string) {
     return this.pagoService.findOne(+id);
   }
 
   @Patch(':id')
   @Roles('ADMIN', 'EMPLEADO')
-  update(@Param('id') id: string, @Body() updatePagoDto: UpdatePagoDto) {
+  async update(@Param('id') id: string, @Body() updatePagoDto: UpdatePagoDto) {
     return this.pagoService.update(+id, updatePagoDto);
   }
 
   @Delete(':id')
   @Roles('ADMIN')
-  remove(@Param('id') id: string) {
+  async remove(@Param('id') id: string) {
     return this.pagoService.remove(+id);
   }
 }
